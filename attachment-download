@@ -1,0 +1,172 @@
+#!.venv/bin/python
+# Import the Canvas class
+from canvasapi import Canvas
+from canvasapi.exceptions import ResourceDoesNotExist, InvalidAccessToken
+import configparser
+import sys
+
+debug = False
+def printDebug(obj):
+    if debug:
+        print(obj)
+
+
+API_URL = None
+API_KEY = None
+COURSE_CODE = None
+ASSIGNMENT_NAME = None
+
+config_filename = "setup.ini"
+def read_config():
+    global API_URL, API_KEY, COURSE_CODE, ASSIGNMENT_NAME
+    config = configparser.ConfigParser()
+    config.read(config_filename)
+
+    if "setup" in config:
+        setup = config["setup"]
+    else:
+        print(f"{config_filename} missing [setup] section.")
+        sys.exit(1)
+
+    if "API_URL" in setup:
+        API_URL = setup["API_URL"]
+    else:
+        print(f"{config_filename} missing API_URL.")
+        sys.exit(1)
+
+    if "API_KEY" in setup:
+        API_KEY = setup["API_KEY"]
+    else:
+        print(f"{config_filename} missing API_KEY.")
+        sys.exit(1)
+
+    if "COURSE_CODE" in setup:
+        COURSE_CODE = setup["COURSE_CODE"]
+    else:
+        print(f"{config_filename} missing COURSE_CODE.")
+        sys.exit(1)
+
+    if "ASSIGNMENT_NAME" in setup:
+        ASSIGNMENT_NAME = setup["ASSIGNMENT_NAME"]
+    else:
+        print(f"{config_filename} missing ASSIGNMENT_NAME.")
+        sys.exit(1)
+
+
+read_config()
+
+print("Connecting to Canvas API... ",end="")
+# Connect to Canvas API and get the account
+try:
+    canvas = Canvas(API_URL, API_KEY)
+    account = canvas.get_account(1)
+except ResourceDoesNotExist:
+    print("Incorrect API_URL.")
+    sys.exit(1)
+except InvalidAccessToken:
+    print("Incorrect API_KEY.")
+    sys.exit(1)
+
+print("Connected!")
+
+
+# search for the course.
+# we're using course_code which is unique, but the API allows partial matches
+# so we need to loop through the results to see if there is an exact match
+# future: display a picker when there is not an exact match
+print(f"Searching by course_code ({COURSE_CODE}) : ",end="")
+
+printDebug(f"get_courses(search_term={COURSE_CODE})")
+courses = account.get_courses(search_term=COURSE_CODE)
+
+printDebug(f"Found {len(list(courses))} partial match(es).")
+
+printDebug("finding exact match")
+exact_courses = [course for course in courses if course.course_code == COURSE_CODE]
+if len(exact_courses) == 0:
+    print("Not found.")
+    exit(1)
+if len(exact_courses) > 1:
+    print("Not unique.")
+    exit(1)
+course = exact_courses[0]
+print("Found")
+printDebug(f"found course_id: {course.id}")
+
+# search for the assignment.
+# we're searching on name which may not be unique and the API allows partial matches
+# so we need to loop through the results to see if there is an exact match
+# future: display a picker when there is not an exact match
+print(f"Searching assignments by name ({ASSIGNMENT_NAME}) : ",end="")
+printDebug(f"course.assignments(search_term={ASSIGNMENT_NAME})")
+assignments = course.get_assignments(search_term=ASSIGNMENT_NAME)
+
+printDebug("finding exact match")
+exact_assignments = [assignment for assignment in assignments if assignment.name == ASSIGNMENT_NAME]
+if len(exact_assignments) == 0:
+    print("Not found.")
+    exit(1)
+if len(exact_assignments) > 1:
+    print("Not unique.")
+    exit(1)
+assignment = exact_assignments[0]
+print("Found")
+printDebug(f"found assignment_id: {assignment.id}")
+
+# now we can get the submissions for this assignment
+# currently this assumes an assignment has a single attachment
+# future: test for multiple submissions and attachments
+printDebug("trying to get submissions")
+submissions = assignment.get_submissions()
+
+# do a quick count so we can give an idea of how long this will take
+submission_count = 0
+attachment_count = 0
+for submission in submissions:
+    submission_count += 1
+    if len(submission.attachments) > 0:
+        attachment_count += 1
+        
+print(f"Found {submission_count} submission(s) with {attachment_count} attachment(s).")
+
+printDebug(f"got submissions")
+
+
+if attachment_count == 0:
+    print("Nothing to download.")
+    sys.exit()
+
+# now download the files
+print("Starting download(s).")
+counter = 0
+for submission in submissions:
+    printDebug(f"-----\ncounter={counter}")
+    if len(submission.attachments) > 0:
+        # this only gets the last attachment ?
+        printDebug(f"{len(submission.attachments)} attachments, only getting the last one")
+
+        # got this from an example code snippet
+        # not sure exactly why it only looks at the last element of this array
+        # will need to look into this more
+        attachment = submission.attachments[-1]
+
+        # generate a "unique" filename
+        # this could probably be better
+        local_filename = f"downloads/a{submission.assignment_id}_u{submission.user_id}_{attachment}"
+        
+        # now do the actual download
+        print(f" {local_filename}", end="")
+        attachment.download(local_filename)
+        
+        print("")
+    counter+= 1
+
+print("Download complete.")
+
+#
+# Things to do:
+# * option for obscured filenames
+# * Can 2 assignments in the same course have the same name
+# * Can an assignment have multiple submissions
+# * Can a submission have multiple attachments
+# * Can 2 attachments by the same person have the same name
