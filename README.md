@@ -15,7 +15,7 @@ Run these once to install:
 
 In the `canvas-attachment-download` directory, do the following:
 * edit `setup.ini` to set Canvas API and course parameters
-* run `make run`
+* run `./canvas-attachment-download -c "course_code" -a "attachment name"`
 * downloads, if any, will be placed in the `downloads` directory
 
 ### Cleaning Up
@@ -34,6 +34,8 @@ Dan Malone
 
 * 0.1
     * Initial Release
+* 0.2
+    * Moved search fields to parameters
 
 ## License
 

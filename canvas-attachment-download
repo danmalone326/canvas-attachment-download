@@ -4,6 +4,8 @@ from canvasapi import Canvas
 from canvasapi.exceptions import ResourceDoesNotExist, InvalidAccessToken
 import configparser
 import sys
+import argparse
+import datetime
 
 debug = False
 def printDebug(obj):
@@ -40,20 +42,24 @@ def read_config():
         print(f"{config_filename} missing API_KEY.")
         sys.exit(1)
 
-    if "COURSE_CODE" in setup:
-        COURSE_CODE = setup["COURSE_CODE"]
-    else:
-        print(f"{config_filename} missing COURSE_CODE.")
-        sys.exit(1)
 
-    if "ASSIGNMENT_NAME" in setup:
-        ASSIGNMENT_NAME = setup["ASSIGNMENT_NAME"]
-    else:
-        print(f"{config_filename} missing ASSIGNMENT_NAME.")
-        sys.exit(1)
+def init_args():
+    global args
 
+    parser = argparse.ArgumentParser(description='Download attachments from a Canvas course assignment.')
+    parser.add_argument('--course-code', '-c', help='Course Code for the course.', required=True)
+    parser.add_argument('--assignment-name', '-a', help='Assignment Name to download.', required=True)
+    parser.add_argument('--anonymous', help='Use anonymous filenames.', action=argparse.BooleanOptionalAction, default=True)
+
+    # parser.add_argument('--simpleMenu', help='Use a simple terminal menu.', action='store_true', default=False)
+
+    args = parser.parse_args()
 
 read_config()
+init_args()
+
+COURSE_CODE = args.course_code
+ASSIGNMENT_NAME = args.assignment_name
 
 print("Connecting to Canvas API... ",end="")
 # Connect to Canvas API and get the account
@@ -152,14 +158,18 @@ for submission in submissions:
 
         # generate a "unique" filename
         # this could probably be better
-        local_filename = f"downloads/a{submission.assignment_id}_u{submission.user_id}_{attachment}"
+        counter+= 1
+        if args.anonymous:
+            user_part = ""
+        else:
+            user_part = f"_{submission.user_id}"
+        local_filename = f"downloads/a{submission.assignment_id}_c{counter:04d}{user_part}_{attachment}"
         
         # now do the actual download
         print(f" {local_filename}", end="")
         attachment.download(local_filename)
         
         print("")
-    counter+= 1
 
 print("Download complete.")
 
