@@ -7,7 +7,7 @@ Download attachments from a Canvas course assignment
 ### Installing
 
 Run these once to install:
-* `git clone git@github.com:danmalone326/canvas-attachment-download.git`
+* `git clone https://github.com/danmalone326/canvas-attachment-download.git`
 * `cd canvas-attachment-download`
 * `make install`
 
