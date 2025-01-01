@@ -52,8 +52,6 @@ def init_args():
     parser.add_argument('--assignment-name', '-a', help='Assignment Name to download.')
     parser.add_argument('--anonymous', help='Use anonymous filenames.', action=argparse.BooleanOptionalAction, default=True)
 
-    # parser.add_argument('--simpleMenu', help='Use a simple terminal menu.', action='store_true', default=False)
-
     args = parser.parse_args()
 
 read_config()
@@ -159,6 +157,7 @@ if attachment_count == 0:
 # now download the files
 print("Starting download(s).")
 counter = 0
+remaining = attachment_count
 for submission in submissions:
     printDebug(f"-----\ncounter={counter}")
     for attachment in submission.attachments:
@@ -172,8 +171,9 @@ for submission in submissions:
         local_filename = f"downloads/a{submission.assignment_id}_c{counter:04d}{user_part}_{attachment}"
         
         # now do the actual download
-        print(f" {local_filename}", end="")
+        print(f"({remaining}) {local_filename}", end="")
         attachment.download(local_filename)
+        remaining -= 1
         
         print("")
 
@@ -181,8 +181,8 @@ print("Download complete.")
 
 #
 # Things to do:
-# * option for obscured filenames
+# * option for obscured filenames - handled
 # * Can 2 assignments in the same course have the same name
-# * Can an assignment have multiple submissions
+# * Can an assignment have multiple submissions - handled
 # * Can a submission have multiple attachments - yes
-# * Can 2 attachments by the same person have the same name
+# * Can 2 attachments by the same person have the same name - handled
