@@ -7,14 +7,16 @@ Download attachments from a Canvas course assignment
 ### Installing
 
 Run these once to install:
+* open a terminal
 * `git clone https://github.com/danmalone326/canvas-attachment-download.git`
+* * If you are asked to install command line tools, you will need allow these to install, then run this command again.
 * `cd canvas-attachment-download`
 * `make install`
 
 ### Executing program
 
 In the `canvas-attachment-download` directory, do the following:
-* edit `setup.ini` to set Canvas API and course parameters
+* edit the file `setup.ini` to set Canvas API parameters
 * run `./canvas-attachment-download -c "course_code" -a "attachment name"`
 * downloads, if any, will be placed in the `downloads` directory
 
