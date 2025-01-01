@@ -2,13 +2,12 @@
 help: 
 	@cat README.md
 
-install: .venv
+install: .venv downloads
 
-run: downloads
-	@./attachment-download
+update: pull-repo .venv downloads
 
 clean: 
-	rm -rf downloads
+	rm -rf downloads/*
 
 ### Below here is for development
 
@@ -28,6 +27,9 @@ downloads:
 clean-all: clean
 	rm -rf .venv
 	find . -iname "*.pyc" -delete
+
+pull-repo:
+	git pull
 
 rebuildRequirements:
 	. .venv/bin/activate; pip freeze > requirements.txt

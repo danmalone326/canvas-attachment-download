@@ -3,6 +3,7 @@ canvasapi==3.3.0
 certifi==2024.12.14
 charset-normalizer==3.4.0
 idna==3.10
+pick==2.4.0
 python-dateutil==2.9.0.post0
 pytz==2024.2
 requests==2.32.3

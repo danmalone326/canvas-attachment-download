@@ -6,6 +6,7 @@ import configparser
 import sys
 import argparse
 import datetime
+from pick import pick
 
 debug = False
 def printDebug(obj):
@@ -48,7 +49,7 @@ def init_args():
 
     parser = argparse.ArgumentParser(description='Download attachments from a Canvas course assignment.')
     parser.add_argument('--course-code', '-c', help='Course Code for the course.', required=True)
-    parser.add_argument('--assignment-name', '-a', help='Assignment Name to download.', required=True)
+    parser.add_argument('--assignment-name', '-a', help='Assignment Name to download.')
     parser.add_argument('--anonymous', help='Use anonymous filenames.', action=argparse.BooleanOptionalAction, default=True)
 
     # parser.add_argument('--simpleMenu', help='Use a simple terminal menu.', action='store_true', default=False)
@@ -84,18 +85,26 @@ print(f"Searching by course_code ({COURSE_CODE}) : ",end="")
 
 printDebug(f"get_courses(search_term={COURSE_CODE})")
 courses = account.get_courses(search_term=COURSE_CODE)
+courses_count = len(list(courses))
 
-printDebug(f"Found {len(list(courses))} partial match(es).")
+printDebug(f"Found {courses_count} partial match(es).")
 
 printDebug("finding exact match")
 exact_courses = [course for course in courses if course.course_code == COURSE_CODE]
-if len(exact_courses) == 0:
+if len(exact_courses) == 1:
+    course = exact_courses[0]
+elif courses_count == 0:
     print("Not found.")
-    exit(1)
-if len(exact_courses) > 1:
-    print("Not unique.")
-    exit(1)
-course = exact_courses[0]
+    sys.exit(1)
+elif courses_count > 50:
+    print("Too many results.")
+    sys.exit(1)
+else:
+    title = "Select an Course:"
+    course_names = [c.name for c in courses]
+    result,index = pick(course_names,title)
+    course = courses[index]
+
 print("Found")
 printDebug(f"found course_id: {course.id}")
 
@@ -106,16 +115,21 @@ printDebug(f"found course_id: {course.id}")
 print(f"Searching assignments by name ({ASSIGNMENT_NAME}) : ",end="")
 printDebug(f"course.assignments(search_term={ASSIGNMENT_NAME})")
 assignments = course.get_assignments(search_term=ASSIGNMENT_NAME)
+assignments_count = len(list(assignments))
 
 printDebug("finding exact match")
 exact_assignments = [assignment for assignment in assignments if assignment.name == ASSIGNMENT_NAME]
-if len(exact_assignments) == 0:
+if len(exact_assignments) == 1:
+    assignment = exact_assignments[0]
+elif assignments_count == 0:
     print("Not found.")
-    exit(1)
-if len(exact_assignments) > 1:
-    print("Not unique.")
-    exit(1)
-assignment = exact_assignments[0]
+    sys.exit(1)
+else:
+    title = "Select an Assignment:"
+    assignment_names = [a.name for a in assignments]
+    result,index = pick(assignment_names,title)
+    assignment = assignments[index]
+
 print("Found")
 printDebug(f"found assignment_id: {assignment.id}")
 
@@ -123,6 +137,7 @@ printDebug(f"found assignment_id: {assignment.id}")
 # currently this assumes an assignment has a single attachment
 # future: test for multiple submissions and attachments
 printDebug("trying to get submissions")
+print("Searching for submissions.")
 submissions = assignment.get_submissions()
 
 # do a quick count so we can give an idea of how long this will take
@@ -130,8 +145,7 @@ submission_count = 0
 attachment_count = 0
 for submission in submissions:
     submission_count += 1
-    if len(submission.attachments) > 0:
-        attachment_count += 1
+    attachment_count += len(submission.attachments)
         
 print(f"Found {submission_count} submission(s) with {attachment_count} attachment(s).")
 
@@ -147,15 +161,7 @@ print("Starting download(s).")
 counter = 0
 for submission in submissions:
     printDebug(f"-----\ncounter={counter}")
-    if len(submission.attachments) > 0:
-        # this only gets the last attachment ?
-        printDebug(f"{len(submission.attachments)} attachments, only getting the last one")
-
-        # got this from an example code snippet
-        # not sure exactly why it only looks at the last element of this array
-        # will need to look into this more
-        attachment = submission.attachments[-1]
-
+    for attachment in submission.attachments:
         # generate a "unique" filename
         # this could probably be better
         counter+= 1
@@ -178,5 +184,5 @@ print("Download complete.")
 # * option for obscured filenames
 # * Can 2 assignments in the same course have the same name
 # * Can an assignment have multiple submissions
-# * Can a submission have multiple attachments
+# * Can a submission have multiple attachments - yes
 # * Can 2 attachments by the same person have the same name
