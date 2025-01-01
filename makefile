@@ -4,7 +4,7 @@ help:
 
 install: .venv downloads
 
-update: pull-repo .venv downloads
+update: pull-repo downloads .venv
 
 clean: 
 	rm -rf downloads/*
