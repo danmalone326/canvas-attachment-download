@@ -171,7 +171,7 @@ for submission in submissions:
         local_filename = f"downloads/a{submission.assignment_id}_c{counter:04d}{user_part}_{attachment}"
         
         # now do the actual download
-        print(f"({remaining}) {local_filename}", end="")
+        print(f"({remaining: 4d}) {local_filename}", end="")
         attachment.download(local_filename)
         remaining -= 1
         
