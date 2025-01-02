@@ -186,7 +186,7 @@ for submission in submissions:
         if args.anonymous:
             user_part = ""
         else:
-            user_part = f"_{submission.user_id}"
+            user_part = f"_u{submission.user_id}"
         local_filename = f"{DOWNLOAD_DIRECTORY}/a{submission.assignment_id}_c{counter:04d}{user_part}_{attachment}"
         
         # now do the actual download
