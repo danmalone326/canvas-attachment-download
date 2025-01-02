@@ -3,9 +3,8 @@
 from canvasapi import Canvas
 from canvasapi.exceptions import ResourceDoesNotExist, InvalidAccessToken
 import configparser
-import sys
+import sys,os,signal
 import argparse
-import datetime
 from pick import pick
 
 debug = False
@@ -18,6 +17,17 @@ API_URL = None
 API_KEY = None
 COURSE_CODE = None
 ASSIGNMENT_NAME = None
+
+DOWNLOAD_DIRECTORY = "downloads"
+
+KEY_ESCAPE = 27
+QUIT_KEYS = (KEY_ESCAPE, ord("q"), ord("Q"))
+
+def signal_handler(sig, frame):
+    print("(Ctrl-C)")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
 
 config_filename = "setup.ini"
 def read_config():
@@ -49,7 +59,7 @@ def init_args():
 
     parser = argparse.ArgumentParser(description='Download attachments from a Canvas course assignment.')
     parser.add_argument('--course-code', '-c', help='Course Code for the course.', required=True)
-    parser.add_argument('--assignment-name', '-a', help='Assignment Name to download.')
+    parser.add_argument('--assignment-name', '-a', help='Assignment Name to download.', default="")
     parser.add_argument('--anonymous', help='Use anonymous filenames.', action=argparse.BooleanOptionalAction, default=True)
 
     args = parser.parse_args()
@@ -82,7 +92,7 @@ print("Connected!")
 print(f"Searching by course_code ({COURSE_CODE}) : ",end="")
 
 printDebug(f"get_courses(search_term={COURSE_CODE})")
-courses = account.get_courses(search_term=COURSE_CODE)
+courses = account.get_courses(search_term=COURSE_CODE, sort="course_name")
 courses_count = len(list(courses))
 
 printDebug(f"Found {courses_count} partial match(es).")
@@ -95,12 +105,15 @@ elif courses_count == 0:
     print("Not found.")
     sys.exit(1)
 elif courses_count > 50:
-    print("Too many results.")
+    print(f"Too many results. ({courses_count})")
     sys.exit(1)
 else:
     title = "Select an Course:"
     course_names = [c.name for c in courses]
-    result,index = pick(course_names,title)
+    result,index = pick(course_names,title, indicator=">", quit_keys=QUIT_KEYS)
+    if index < 0:
+        print("")
+        sys.exit(0)
     course = courses[index]
 
 print("Found")
@@ -125,7 +138,10 @@ elif assignments_count == 0:
 else:
     title = "Select an Assignment:"
     assignment_names = [a.name for a in assignments]
-    result,index = pick(assignment_names,title)
+    result,index = pick(assignment_names,title, indicator=">", quit_keys=QUIT_KEYS)
+    if index < 0:
+        print("")
+        sys.exit(0)
     assignment = assignments[index]
 
 print("Found")
@@ -168,16 +184,17 @@ for submission in submissions:
             user_part = ""
         else:
             user_part = f"_{submission.user_id}"
-        local_filename = f"downloads/a{submission.assignment_id}_c{counter:04d}{user_part}_{attachment}"
+        local_filename = f"{DOWNLOAD_DIRECTORY}/a{submission.assignment_id}_c{counter:04d}{user_part}_{attachment}"
         
         # now do the actual download
         print(f"({remaining: 4d}) {local_filename}", end="")
-        attachment.download(local_filename)
+        #attachment.download(local_filename)
         remaining -= 1
         
         print("")
 
 print("Download complete.")
+print(f"Attachments saved to {os.path.abspath(DOWNLOAD_DIRECTORY)}")
 
 #
 # Things to do:
