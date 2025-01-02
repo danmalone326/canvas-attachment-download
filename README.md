@@ -21,8 +21,8 @@ To update to the latest version in the future:
 In the `canvas-attachment-download` directory, do the following:
 * edit the file `setup.ini` to set Canvas API parameters
 * run `./canvas-attachment-download -c "course_code"`
-    * there is also an optional assignment name parameter if needed
-    * run `./canvas-attachment-download -c "course_code" -a "assignment name"`
+    * there are also optional term and assignment name parameters if needed
+    * run `./canvas-attachment-download -c "course_code" -t "term" -a "assignment name"`
 * downloads, if any, will be placed in the `downloads` directory
 
 ### Cleaning Up

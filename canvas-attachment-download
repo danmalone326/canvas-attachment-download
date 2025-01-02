@@ -60,6 +60,7 @@ def init_args():
 
     parser = argparse.ArgumentParser(description='Download attachments from a Canvas course assignment.')
     parser.add_argument('--course-code', '-c', help='Course Code for the course.', required=True)
+    parser.add_argument('--term', '-t', help='Term for the course.', default="")
     parser.add_argument('--assignment-name', '-a', help='Assignment Name to download.', default="")
     parser.add_argument('--anonymous', help='Use anonymous filenames.', action=argparse.BooleanOptionalAction, default=True)
 
@@ -69,6 +70,7 @@ read_config()
 init_args()
 
 COURSE_CODE = args.course_code
+TERM = args.term
 ASSIGNMENT_NAME = args.assignment_name
 
 print("Connecting to Canvas API... ",end="")
@@ -85,6 +87,16 @@ except InvalidAccessToken:
 
 print("Connected!")
 
+enrollment_term_id = None
+if TERM != "":
+    terms = account.get_enrollment_terms()
+    for term in terms:
+        printDebug(f"id: {term.id}  name: {term.name} sis_term_id: {term.sis_term_id}")
+        if TERM == term.sis_term_id or TERM == term.name:
+            enrollment_term_id = term.id
+            break
+printDebug(enrollment_term_id)
+
 
 # search for the course.
 # we're using course_code which is unique, but the API allows partial matches
@@ -93,7 +105,7 @@ print("Connected!")
 print(f"Searching by course_code ({COURSE_CODE}) : ",end="")
 
 printDebug(f"get_courses(search_term={COURSE_CODE})")
-courses = account.get_courses(search_term=COURSE_CODE, sort="course_name")
+courses = account.get_courses(search_term=COURSE_CODE, sort="course_name", enrollment_term_id=enrollment_term_id)
 try:
     test = courses[MAX_COURSES]
     print(f"Too many results. (>{MAX_COURSES})")
