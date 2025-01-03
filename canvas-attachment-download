@@ -203,7 +203,7 @@ for submission in submissions:
         
         # now do the actual download
         print(f"({remaining: 4d}) {local_filename}", end="")
-        #attachment.download(local_filename)
+        attachment.download(local_filename)
         remaining -= 1
         
         print("")
