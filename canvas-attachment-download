@@ -87,8 +87,8 @@ except InvalidAccessToken:
 
 print("Connected!")
 
-user = canvas.get_user('self',None)
-print(f"Logged in as: {user.email}")
+# user = canvas.get_user('self',None)
+# print(f"Logged in as: {user.email}")
 
 enrollment_term_id = None
 if TERM != "":
